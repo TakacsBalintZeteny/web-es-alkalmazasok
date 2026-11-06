@@ -1,0 +1,73 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  GUEST
+  MANAGER
+}
+
+model User {
+  id           Int       @id @default(autoincrement())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(GUEST)
+  createdAt    DateTime  @default(now())
+
+  bookings Booking[]
+
+  @@map("users")
+}
+
+model Table {
+  id       Int       @id @default(autoincrement())
+  name     String
+  capacity Int
+  bookings Booking[]
+
+  @@map("tables")
+}
+
+model Guest {
+  id       Int       @id @default(autoincrement())
+  name     String
+  bookings Booking[]
+
+  @@map("guests")
+}
+
+model Booking {
+  id         Int      @id @default(autoincrement())
+  guestId    Int
+  tableId    Int
+  userId     Int?
+  date       DateTime @db.Date
+  startTime  String   @db.VarChar(5)
+  endTime    String   @db.VarChar(5)
+  guestCount Int
+
+  guest Guest @relation(fields: [guestId], references: [id], onDelete: Restrict)
+  table Table @relation(fields: [tableId], references: [id], onDelete: Restrict)
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([date, tableId])
+  @@index([userId])
+  @@map("bookings")
+}
+
+model OpeningHours {
+  id        Int    @id @default(autoincrement())
+  dayOfWeek Int
+  startTime String @db.VarChar(5)
+  endTime   String @db.VarChar(5)
+
+  @@index([dayOfWeek])
+  @@map("opening_hours")
+}
